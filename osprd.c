@@ -218,7 +218,7 @@ static int osprd_close_last(struct inode *inode, struct file *filp)
 			itr = itr->next;
 
 		    }
-		  kfree(prev); kfree(itr);
+		  kfree(itr);
 		}
 
 		wake_up_all(&d->blockq);
