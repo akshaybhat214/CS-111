@@ -182,13 +182,49 @@ static int osprd_close_last(struct inode *inode, struct file *filp)
 		// a lock, release the lock.  Also wake up blocked processes
 		// as appropriate.
 
-		// Your code here.
+		osp_spin_lock(&d->mutex);
 
-		// This line avoids compiler warnings; you may remove it.
-		(void) filp_writable, (void) d;
+		if (filp->f_flags & (~F_OSPRD_LOCKED)) //Easiest case, no locks.
+		{
+		  osp_spin_unlock(&d->mutex);
+		  return 0; //Nothing else to be done
+		}
 
+		if (filp_writable) //Is blocked to write
+		{
+		  d->is_write_locked = 0;
+		  d->writer_pid = -1; //This is all we have to do if  in write mode.
+		}
+		else //readers
+		{
+		  pid_LL_t *prev = NULL;
+		  pid_LL_t *itr = d->reader_pids;
+		  while(itr!=NULL)
+		    {
+			if (itr->pid == current->pid)
+			 {
+				if (prev == NULL){
+				  d->reader_pids = itr->next; //change head of readers list
+				}
+				
+				else
+				  prev->next = itr->next;
+
+				d->read_lock_count-- ;
+				break; 
+			 }
+			 //Continue iterating if no break
+			prev = itr;
+			itr = itr->next;
+
+		    }
+		  kfree(prev); kfree(itr);
+		}
+
+		wake_up_all(&d->blockq);
+		osp_spin_unlock(&d->mutex);
+		(void) filp_writable, (void) d; // This line avoids compiler warnings;
 	}
-
 	return 0;
 }
 
