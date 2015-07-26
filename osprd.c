@@ -223,6 +223,7 @@ static int osprd_close_last(struct inode *inode, struct file *filp)
 
 		wake_up_all(&d->blockq);
 		osp_spin_unlock(&d->mutex);
+		filp->f_flags &= (~F_OSPRD_LOCKED); //Unlock device if locked
 		(void) filp_writable, (void) d; // This line avoids compiler warnings;
 	}
 	return 0;
