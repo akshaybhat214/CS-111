@@ -129,11 +129,32 @@ static void osprd_process_request(osprd_info_t *d, struct request *req)
 	// Consider the 'req->sector', 'req->current_nr_sectors', and
 	// 'req->buffer' members, and the rq_data_dir() function.
 
-	// Your code here.
+	int request_size = req->current_nr_sectors * SECTOR_SIZE;
+	void *destination_addr = (req->sector * SECTOR_SIZE) + d->data;
+	int final_sectors= req->current_nr_sectors + req->sector;
 
-	eprintk("Should process request...\n");
+	//Test if we are reading/writing ot of bounds.
+	if (final_sectors > nsectors){
+		eprintk("Unavailable sectors requested.\n");
+		end_request(req, 0);
+	}
 
-	end_request(req, 1);
+	if (rq_data_dir(req)== READ)
+	{
+		memcpy(req->buffer,destination_addr ,request_size);
+		end_request(req, 1);
+	}
+	else if (rq_data_dir(req)== WRITE)
+	{
+		memcpy(destination_addr, req->buffer ,request_size);
+		end_request(req, 1);
+	}
+	else 
+	{
+		eprintk("Command must be READ or WRITE.\n");
+		end_request(req, 0);
+	}
+
 }
 
 
