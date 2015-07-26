@@ -130,6 +130,7 @@ static void osprd_process_request(osprd_info_t *d, struct request *req)
 	// 'req->buffer' members, and the rq_data_dir() function.
 
 	// Your code here.
+
 	eprintk("Should process request...\n");
 
 	end_request(req, 1);
